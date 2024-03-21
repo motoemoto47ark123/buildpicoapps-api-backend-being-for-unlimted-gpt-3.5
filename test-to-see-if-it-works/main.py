@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+import uuid  # Import uuid for generating chat IDs
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -15,10 +16,16 @@ async def send_wss_request(data):
     try:
         async with websockets.connect(WSS_URL) as wss:
             # Use the provided system prompt if available, otherwise use the default
-            system_prompt = data.get("systemPrompt", DEFAULT_SYSTEM_PROMPT)
+            system_prompt = data.get("systemPrompt") if "systemPrompt" in data else DEFAULT_SYSTEM_PROMPT
+
+            # Generate a chat ID if it's not provided in the request
+            chat_id = data.get("chatId")
+            if not chat_id:
+                chat_id = str(uuid.uuid4())  # Generate a new UUID for the chat session
+                data["chatId"] = chat_id  # Store the generated UUID in the data dictionary
 
             request_data = {
-                "chatId": data.get("chatId", ""),
+                "chatId": chat_id,
                 "appId": "happy-rest",
                 "systemPrompt": system_prompt,
                 "message": data.get("message", "")
@@ -26,7 +33,7 @@ async def send_wss_request(data):
             await wss.send(json.dumps(request_data))
 
             # Initialize the response
-            response = {}
+            response = {"chatId": chat_id}  # Include the chat ID in the response
 
             # Receive the response from the wss server as a stream
             async for message in wss:
@@ -36,11 +43,11 @@ async def send_wss_request(data):
             return response
     except websockets.exceptions.ConnectionClosed as e:
         # Handle connection closed errors
-        error_message = {"error": f"Connection closed: {e.code} - {e.reason}"}
+        error_message = {"error": f"Connection closed: {e.code} - {e.reason}", "chatId": chat_id}
         return error_message
     except Exception as e:
         # Handle other exceptions
-        error_message = {"error": str(e)}
+        error_message = {"error": str(e), "chatId": chat_id}
         return error_message
 
 @app.route('/chat', methods=['POST'])
