@@ -2,9 +2,9 @@ import requests
 import json
 import sys
 
-API_ENDPOINT = "https://qz83c6-8000.csb.app/chat"
+API_ENDPOINT = "https://nwnnsd-8000.csb.app/chat"
 
-SYSTEM_PROMPT = "You are a good AI assistant. You will only tell me how nice I talk to you."
+SYSTEM_PROMPT = ""
 
 # Initialize chatId as None to check if it's the first request
 chatId = None

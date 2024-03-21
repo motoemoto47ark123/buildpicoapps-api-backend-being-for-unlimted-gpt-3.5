@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import json
 import uuid  # Import uuid for generating chat IDs
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 
 app = Flask(__name__)
 
@@ -15,14 +15,11 @@ DEFAULT_SYSTEM_PROMPT = "You are the Code Maker, a friendly and professional Pyt
 async def send_wss_request(data):
     try:
         async with websockets.connect(WSS_URL) as wss:
-            # Use the provided system prompt if available, otherwise use the default
-            system_prompt = data.get("systemPrompt") if "systemPrompt" in data else DEFAULT_SYSTEM_PROMPT
-
-            # Generate a chat ID if it's not provided in the request
+            system_prompt = data.get("systemPrompt", "").strip() or DEFAULT_SYSTEM_PROMPT
             chat_id = data.get("chatId")
             if not chat_id:
-                chat_id = str(uuid.uuid4())  # Generate a new UUID for the chat session
-                data["chatId"] = chat_id  # Store the generated UUID in the data dictionary
+                chat_id = str(uuid.uuid4())
+                data["chatId"] = chat_id
 
             request_data = {
                 "chatId": chat_id,
@@ -31,24 +28,64 @@ async def send_wss_request(data):
                 "message": data.get("message", "")
             }
             await wss.send(json.dumps(request_data))
-
-            # Initialize the response
-            response = {"chatId": chat_id}  # Include the chat ID in the response
-
-            # Receive the response from the wss server as a stream
+            response = {"chatId": chat_id}
             async for message in wss:
-                # Append the streamed message to the response
                 response["response"] = response.get("response", "") + message
-
             return response
     except websockets.exceptions.ConnectionClosed as e:
-        # Handle connection closed errors
         error_message = {"error": f"Connection closed: {e.code} - {e.reason}", "chatId": chat_id}
         return error_message
     except Exception as e:
-        # Handle other exceptions
         error_message = {"error": str(e), "chatId": chat_id}
         return error_message
+
+@app.route('/')
+def home():
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>API Home</title>
+        <style>
+            body { background-color: #333; color: #0f0; font-family: Arial, sans-serif; }
+            .container { text-align: center; padding: 50px; }
+            .button { background-color: #444; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; }
+            .button:hover { background-color: #555; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>The API is Live</h1>
+            <p>This API provides an interface to a chatbot designed for coding assistance.</p>
+            <a href="/docs" class="button">API Documentation</a>
+        </div>
+    </body>
+    </html>
+    """, code=200)
+
+@app.route('/docs')
+def docs():
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>API Documentation</title>
+        <style>
+            body { background-color: #333; color: white; font-family: Arial, sans-serif; }
+            .container { text-align: center; padding: 50px; }
+            .button { background-color: #444; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; }
+            .button:hover { background-color: #555; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>API Documentation</h1>
+            <p>Learn how to interact with the API to leverage the chatbot for coding assistance.</p>
+            <a href="/" class="button">Back to Home</a>
+        </div>
+    </body>
+    </html>
+    """, code=200)
 
 @app.route('/chat', methods=['POST'])
 def chat():
