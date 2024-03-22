@@ -9,12 +9,12 @@ from pydub import AudioSegment  # Import AudioSegment from pydub for audio file 
 import pyaudio  # Import pyaudio for playing audio files
 
 # Custom API endpoint
-API_ENDPOINT = "https://qz83c6-8000.csb.app/chat"
+API_ENDPOINT = "https://gpt-proxy.motoemotovps.uk.to/chat"
 SYSTEM_PROMPT = ""
 
 # Deepgram API setup
 DEEPGRAM_API_KEY = "64c459feb22d71fe34cccca5b6bafa7d8a006346"
-DEEPGRAM_API_URL = "https://api.deepgram.com/v1/speak?model=zeus"  # Updated model name to zeus
+DEEPGRAM_API_URL = "https://api.deepgram.com/v1/speak?model=aura-zeus-en"  # Updated model name to zeus
 DEEPGRAM_HEADERS = {
     "Authorization": f"Token {DEEPGRAM_API_KEY}",
     "Content-Type": "application/json"
