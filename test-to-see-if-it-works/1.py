@@ -2,7 +2,7 @@ import requests
 import json
 import sys
 
-API_ENDPOINT = "https://nwnnsd-8000.csb.app/chat"
+API_ENDPOINT = "http://gpt-proxy.motoemotovps.serv00.net/chat"
 
 SYSTEM_PROMPT = ""
 
