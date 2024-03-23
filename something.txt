@@ -1,0 +1,26 @@
+Model = "https://huggingface.co/KoboldAI/LLaMA2-13B-Tiefighter-GGUF/resolve/main/LLaMA2-13B-Tiefighter.Q4_K_S.gguf"
+Layers = 99
+ContextSize = 4096
+ForceRebuild = False
+# markdown <hr>
+VCommand = ""
+# markdown <hr>
+SCommand = ""
+
+%cd /kaggle/working
+!git clone https://github.com/LostRuins/koboldcpp
+%cd /kaggle/working/koboldcpp
+kvers = !(cat koboldcpp.py | grep 'KcppVersion = ' | cut -d '"' -f2)
+kvers = kvers[0]
+if ForceRebuild:
+  kvers = "force_rebuild"
+!echo Finding prebuilt binary for {kvers}
+!wget -O dlfile.tmp https://kcppcolab.concedo.workers.dev/?{kvers} && mv dlfile.tmp koboldcpp_cublas.so
+!test -f koboldcpp_cublas.so && echo Prebuilt Binary Exists || echo Prebuilt Binary Does Not Exist
+!test -f koboldcpp_cublas.so && echo Build Skipped || make koboldcpp_cublas LLAMA_CUBLAS=1 LLAMA_COLAB=1 LLAMA_PORTABLE=1
+!cp koboldcpp_cublas.so koboldcpp_cublas.dat
+!apt update
+!apt install glibc-source glibc-devel -y
+!apt install aria2 -y
+!aria2c -x 10 -o model.gguf --summary-interval=5 --download-result=default --allow-overwrite=true --file-allocation=none $Model
+!python koboldcpp.py model.gguf --usecublas 0 mmq --multiuser --gpulayers $Layers --contextsize $ContextSize --quiet --remotetunnel $VCommand $SCommand
